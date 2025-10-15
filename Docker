@@ -1,0 +1,130 @@
+// 🚀 RAMSY BOT V2 - Code Complet // Version avec intégration TikTok, Spotify, RemoveBG et IA locale façon Naruto 🌀
+
+import axios from 'axios'; import fs from 'fs'; import ytdl from 'ytdl-core'; import FormData from 'form-data';
+
+// === CONFIGURATION === const REMOVE_BG_API_KEY = 'TON_API_KEY_ICI'; // ➜ à remplacer par ta clé remove.bg quand tu l'auras
+
+// === MENU PRINCIPAL === const menu = ` 🤖 🤖 RAMSY BOT V2 - LISTE DES MENUS 🤖
+
+╭──────────────────╮ │   CATÉGORIES   │ ╰──────────────────╯
+
+┌─ 🏠 MENUS PRINCIPAUX │ • .menu - Menu principal complet │ • .menu2 - Menu alternatif │ • .menuimage - Menu visuel avec image │ • .menuall - Toutes les commandes
+
+┌─ 🎯 MENUS SPÉCIALISÉS │ • .menubasic - Commandes essentielles │ • .menumedia - Outils médias & création │ • .menugroup - Gestion de groupe │ • .menuai - Intelligence artificielle │ • .menusettings - Paramètres bot
+
+┌─ 🎵 MÉDIA POWER │ • .tiktok <url> - Télécharge une vidéo TikTok sans filigrane │ • .spotify <titre> - Télécharge une musique depuis Spotify / YouTube │ • .removebg (répond à une image) - Supprime l’arrière-plan
+
+┌─ 🧠 INTELLIGENCE ARTIFICIELLE │ • .ramsyai <message> - Parle avec RAMSY AI (style Naruto 🌀)
+
+┌─ 🔧 COMMANDES RAPIDES │ • .ping - Test de latence │ • .info - Informations bot │ • .alive - Statut du bot │ • .owner - Contact propriétaire │ • .sticker - Créer sticker
+
+💡 Explorez chaque catégorie pour découvrir toutes les fonctionnalités ! `;
+
+// === HANDLER DU MENU === const handler = async (m, { conn }) => { await conn.sendMessage(m.chat, { text: menu }, { quoted: m }); }; handler.command = ['menu', 'menu1']; handler.help = ['menu']; handler.tags = ['main']; export default handler;
+
+// === PING COMMAND === export const pingHandler = async (m, { conn }) => { const start = new Date(); await conn.sendMessage(m.chat, { text: '🏓 Calcul du ping...' }, { quoted: m }); const end = new Date(); await conn.sendMessage(m.chat, { text: 🏓 Ping: ${end - start} ms }, { quoted: m }); }; pingHandler.command = ['ping'];
+
+// === TIKTOK DOWNLOADER === export const tiktokHandler = async (m, { conn, args }) => { if (!args[0]) return conn.sendMessage(m.chat, { text: '❌ Fournis le lien TikTok !' }, { quoted: m }); const url = args[0]; await conn.sendMessage(m.chat, { text: '🎬 Téléchargement en cours... Patiente un instant 😎' }, { quoted: m }); try { const res = await axios.get(https://api.tiklydown.me/api/download?url=${url}); const video = res.data.video.noWatermark; await conn.sendMessage(m.chat, { video: { url: video }, caption: '✅ Vidéo TikTok téléchargée avec succès !' }, { quoted: m }); } catch (e) { await conn.sendMessage(m.chat, { text: '⚠️ Erreur de téléchargement TikTok.' }, { quoted: m }); } }; tiktokHandler.command = ['tiktok'];
+
+// === SPOTIFY / YOUTUBE MUSIC === export const spotifyHandler = async (m, { conn, args }) => { if (!args[0]) return conn.sendMessage(m.chat, { text: '❌ Donne le titre de la musique.' }, { quoted: m }); const query = args.join(' '); await conn.sendMessage(m.chat, { text: 🎧 Recherche de *${query}*... }, { quoted: m }); try { const searchUrl = https://api.vevioz.com/apisearch?query=${encodeURIComponent(query)}; const res = await axios.get(searchUrl); const videoUrl = res.data?.results?.[0]?.url; if (!videoUrl) throw new Error('Aucun résultat');
+
+const stream = ytdl(videoUrl, { filter: 'audioonly' });
+await conn.sendMessage(m.chat, { text: '🎵 Conversion en cours... 🔄' }, { quoted: m });
+await conn.sendMessage(m.chat, { audio: { stream }, mimetype: 'audio/mp4', fileName: `${query}.mp3` }, { quoted: m });
+
+} catch (e) { await conn.sendMessage(m.chat, { text: '⚠️ Erreur pendant la recherche ou le téléchargement.' }, { quoted: m }); } }; spotifyHandler.command = ['spotify'];
+
+// === REMOVE BACKGROUND === export const removebgHandler = async (m, { conn }) => { if (!m.quoted || !m.quoted.mimetype || !m.quoted.mimetype.startsWith('image/')) { return conn.sendMessage(m.chat, { text: '🖼️ Réponds à une image pour supprimer le fond.' }, { quoted: m }); }
+
+await conn.sendMessage(m.chat, { text: '✂️ Suppression du fond en cours... ⏳' }, { quoted: m }); const buffer = await m.quoted.download();
+
+try { const formData = new FormData(); formData.append('image_file', buffer, { filename: 'image.png' }); formData.append('size', 'auto');
+
+const response = await axios.post('https://api.remove.bg/v1.0/removebg', formData, {
+  headers: {
+    ...formData.getHeaders(),
+    'X-Api-Key': REMOVE_BG_API_KEY,
+  },
+  responseType: 'arraybuffer',
+});
+
+fs.writeFileSync('./output.png', response.data);
+await conn.sendMessage(m.chat, { image: fs.readFileSync('./output.png'), caption: '✅ Arrière-plan supprimé avec succès !' }, { quoted: m });
+
+} catch (e) { await conn.sendMessage(m.chat, { text: '⚠️ Erreur avec RemoveBG. Ajoute ta clé API pour activer la fonction.' }, { quoted: m }); } }; removebgHandler.command = ['removebg'];
+
+// === RAMSY AI MODE NARUTO 🌀 === export const ramsyAIHandler = async (m, { conn, args }) => { const userInput = args.join(' '); if (!userInput) { return conn.sendMessage(m.chat, { text: '🍃 Pose-moi une question, jeune shinobi ! (.ramsyai <message>)' }, { quoted: m }); }
+
+await conn.sendMessage(m.chat, { text: '💭 RAMSY AI se concentre... canalisation du chakra... 🌀' }, { quoted: m });
+
+let response = ''; const text = userInput.toLowerCase();
+
+if (text.includes('bonjour') || text.includes('salut')) { response = '🍃 Yo Ramsy ! Le vent du changement souffle toujours du côté des plus courageux. Prêt à t’entraîner aujourd’hui ? 🥷🔥'; } else if (text.includes('motivation')) { response = '💥 Souviens-toi, Ramsy : un vrai ninja ne fuit jamais ses défis. Il les transforme en puissance intérieure ! 💪🍃'; } else if (text.includes('qui es-tu')) { response = '🌀 Je suis RAMSY AI, ton allié de l’ombre. Créé par Ramsy King, forgé dans le feu de la détermination et du code ! ⚡'; } else if (text.includes('blague')) { response = '😂 Pourquoi les ninjas ne vont jamais en vacances ? Parce qu’ils disparaissent déjà trop souvent ! 😎🍃'; } else if (text.includes('force') || text.includes('pouvoir')) { response = '🔥 Le véritable pouvoir ne vient pas du chakra... mais de la volonté de ne jamais abandonner, Ramsy ! 🌀'; } else { response = ⚔️ Hmm... intéressant, Ramsy. Même les plus grands ninjas apprennent chaque jour. Reste concentré et continue ton chemin ! 🍃; }
+
+await conn.sendMessage(m.chat, { text: response }, { quoted: m }); }; ramsyAIHandler.command = ['ramsyai'];
+
+https://api.vevioz.com/apisearch?query=${encodeURIComponent(query)💨💠 [ Activation du Chakra de RAMSY BOT... ] 💠💨
+🌀 Chakra Level: MAXIMUM
+🍃 Mode Ninja: Activé
+⚡ Énergie du maître Ramsy King détectée...
+
+🤖 *RAMSY BOT V2 - MODE SHINOBI ACTIVÉ* 🤖
+🌪️ L'esprit du code et du chakra t'accompagnent 🍃
+
+╭──────────────────╮
+│   *CATÉGORIES*   │
+╰──────────────────╯
+
+┌─ *🏠 MENUS PRINCIPAUX* 💠
+│ • .menu - Menu principal complet
+│ • .menu2 - Menu alternatif
+│ • .menuimage - Menu visuel avec image
+│ • .menuall - Toutes les commandes
+
+┌─ *🎯 MENUS SPÉCIALISÉS* 🌪️
+│ • .menubasic - Commandes essentielles
+│ • .menumedia - Outils médias & création
+│ • .menugroup - Gestion de groupe
+│ • .menuai - Intelligence artificielle
+│ • .menusettings - Paramètres bot
+
+┌─ *🔧 COMMANDES RAPIDES* ⚡
+│ • .ping - Test de latence
+│ • .info - Informations bot
+│ • .alive - Statut du bot
+│ • .owner - Contact propriétaire
+│ • .sticker - Créer sticker
+
+💡 *Que ton chakra du code reste stable, Ramsy !* 🍃💨💠 [ Activation du Chakra de RAMSY BOT... ] 💠💨
+🌀 Chakra Level: MAXIMUM
+🍃 Mode Ninja: Activé
+⚡ Énergie du maître Ramsy King détectée...
+
+🤖 *RAMSY BOT V2 - MODE SHINOBI ACTIVÉ* 🤖
+🌪️ L'esprit du code et du chakra t'accompagnent 🍃
+
+╭──────────────────╮
+│   *CATÉGORIES*   │
+╰──────────────────╯
+
+┌─ *🏠 MENUS PRINCIPAUX* 💠
+│ • .menu - Menu principal complet
+│ • .menu2 - Menu alternatif
+│ • .menuimage - Menu visuel avec image
+│ • .menuall - Toutes les commandes
+
+┌─ *🎯 MENUS SPÉCIALISÉS* 🌪️
+│ • .menubasic - Commandes essentielles
+│ • .menumedia - Outils médias & création
+│ • .menugroup - Gestion de groupe
+│ • .menuai - Intelligence artificielle
+│ • .menusettings - Paramètres bot
+
+┌─ *🔧 COMMANDES RAPIDES* ⚡
+│ • .ping - Test de latence
+│ • .info - Informations bot
+│ • .alive - Statut du bot
+│ • .owner - Contact propriétaire
+│ • .sticker - Créer sticker
+
+💡 *Que ton chakra du code reste stable, Ramsy !* 🍃
